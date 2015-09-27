@@ -1,0 +1,66 @@
+run_analysis = function() {
+    
+    #AV0525
+    # Source of data for this project: https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip
+    # This R script does the following:
+    
+    library(dplyr)
+    library(plyr)
+    library(knitr)
+    
+    
+    # 1. Merges the training and the test sets to create one data set.
+    
+    setwd("C:/Users/Apratim Vidyarthi/Desktop/Data/UCI HAR Dataset/test")
+    features1 = data.frame(read.table("X_test.txt"))
+    subject1 = data.frame(read.table("subject_test.txt"))
+    activity1 = data.frame(read.table("y_test.txt"))
+    
+    setwd("C:/Users/Apratim Vidyarthi/Desktop/Data/UCI HAR Dataset/train")
+    features2 = data.frame(read.table("X_train.txt"))
+    subject2 = data.frame(read.table("subject_train.txt"))
+    activity2 = data.frame(read.table("y_train.txt"))
+    
+    features = rbind(features1, features2)
+    subject = rbind(subject1, subject2)
+    activity = rbind(activity1, activity2)
+    
+    setwd("C:/Users/Apratim Vidyarthi/Desktop/Data/UCI HAR Dataset")
+    headers = read.table("features.txt")
+    colnames(features) = headers[,2]
+    activity_labels = read.table("activity_labels.txt")
+    
+    names(subject) = c("subject")
+    names(activity) = c("activity")
+    
+    final1 = cbind(subject, activity)
+    final = cbind(features, final1)
+    
+    
+    # 2. Extracts only the measurements on the mean and standard deviation for each measurement.
+    measure_names = headers$V2[grep("mean\\(\\)|std\\(\\)", headers$V2)]
+    measure_names2 = c(as.character(measure_names), "subject", "activity" )
+    measurements = subset(final, select = measure_names2)
+    
+    
+    # 3. Uses descriptive activity names to name the activities in the data set.
+    names(final) = gsub("^t", "time", names(final))
+    names(final) = gsub("^f", "frequency", names(final))
+    names(final) = gsub("Acc", "Accelerometer", names(final))
+    names(final) = gsub("Gyro", "Gyroscope", names(final))
+    names(final) = gsub("Mag", "Magnitude", names(final))
+    names(final) = gsub("BodyBody", "Body", names(final))
+
+    
+    # 4. Appropriately labels the data set with descriptive activity names.
+    final$activity = factor(final$activity, levels = activity_labels[,1], labels = activity_labels[,2])
+    final$subject = as.factor(final$subject)
+    
+    
+    # 5. Creates a 2nd, independent tidy data set with the average of each variable for each activity and each subject.
+    final2 = aggregate(. ~subject + activity, final, mean)
+    final2 = final2[order(final2$subject, final2$activity),]
+    write.table(final2, file = "tidydata.txt",row.name=FALSE)
+
+    
+    }
